@@ -1,0 +1,9 @@
+fastapi
+pydantic-settings
+gunicorn
+uvicorn
+aiohttp
+asyncpg
+openpyxl
+aiofiles
+aiocsv

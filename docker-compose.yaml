@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  lcthack-postgres:
+    build:
+      context: .
+      dockerfile: ./docker/postgres/Dockerfile
+    environment:
+      POSTGRES_USER: lcthack_user
+      POSTGRES_PASSWORD: lcthack_password
+      POSTGRES_DB: lcthack
+    restart: unless-stopped
+    ports:
+      - "5430:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data:rw
+      - ./lct_dataset/1.МИК:/opt:rw
+
+  lcthack-app:
+    build:
+      context: .
+      dockerfile: ./lct_app/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - lcthack-postgres
+    env_file:
+      - ./config/postgres.env
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./lct_app/:/opt/app-root/src/lct_app:rw
+      - ./common/:/opt/app-root/src/common:rw
+
+  lcthack-db_markup_industrial_design:
+    build:
+      context: .
+      dockerfile: ./db_markup_industrial_design/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - lcthack-postgres
+    env_file:
+      - ./config/postgres.env
+    volumes:
+      - ./db_markup_industrial_design/:/opt/app-root/src/db_markup_industrial_design:rw
+      - ./common/:/opt/app-root/src/common:rw
+  lcthack-db_markup_utility_model:
+    build:
+      context: .
+      dockerfile: ./db_markup_utility_model/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - lcthack-postgres
+    env_file:
+      - ./config/postgres.env
+    volumes:
+      - ./db_markup_utility_model/:/opt/app-root/src/db_markup_utility_model:rw
+      - ./common/:/opt/app-root/src/common:rw
+  lcthack-db_markup_invention:
+    build:
+      context: .
+      dockerfile: ./db_markup_invention/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - lcthack-postgres
+    env_file:
+      - ./config/postgres.env
+    volumes:
+      - ./db_markup_invention/:/opt/app-root/src/db_markup_invention:rw
+      - ./common/:/opt/app-root/src/common:rw
+
+
+
