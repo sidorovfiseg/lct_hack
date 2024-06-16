@@ -14,7 +14,6 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data:rw
-      - ./lct_dataset/1.МИК:/opt:rw
 
   lcthack-app:
     build:
