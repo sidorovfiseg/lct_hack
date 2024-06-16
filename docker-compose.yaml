@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   lcthack-postgres:
@@ -18,7 +18,7 @@ services:
   lcthack-app:
     build:
       context: .
-      dockerfile: ./lct_app/Dockerfile
+      dockerfile: ./src/lct_app/Dockerfile
     restart: unless-stopped
     depends_on:
       - lcthack-postgres
@@ -27,5 +27,5 @@ services:
     ports:
       - "8081:8081"
     volumes:
-      - ./lct_app/:/opt/app-root/src/lct_app:rw
-      - ./common/:/opt/app-root/src/common:rw
+      - ./src/lct_app/:/opt/app-root/src/lct_app:rw
+      - ./src/common/:/opt/app-root/src/common:rw
