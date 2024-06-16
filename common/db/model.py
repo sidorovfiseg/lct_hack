@@ -482,11 +482,39 @@ async def get_msp_count_by_inns(connection: Connection, inns: list[str]):
     )
     return answer
 
+async def get_msp_classification_type_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+        select "Вид предпринимательства", count(*) from msp_organisation_classification
+        where "ИНН" = ANY($1) group by "Вид предпринимательства";
+        ''', inns
+    )
+    return [dict(row) for row in answer] if answer else None
+
+async def get_msp_classification_category_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+        select "Категория субъекта", count(*) from msp_organisation_classification
+        where "ИНН" = ANY($1) group by "Категория субъекта";
+        ''', inns
+    )
+    return [dict(row) for row in answer] if answer else None
+
 async def get_org_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
         select count(*) from organisation_classification
-        where "ИНН" = ANY($1);
+        where "inn" = ANY($1);
         ''', inns
     )
     return answer
+
+async def get_org_classification_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+        select "objecttype", count(*) from organisation_classification
+        where "inn" = ANY($1) group by "objecttype";
+        ''', inns
+    )
+    return [dict(row) for row in answer] if answer else None
+

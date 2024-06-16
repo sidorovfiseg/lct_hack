@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 import aiofiles
 
 from common.db.model import get_inventions_by_inn, get_inventions_by_many_inns, get_industrial_designs_by_many_inns, get_utility_model_by_many_inns, get_okopf_count, get_msp_organisation_additional_info, get_organisation_additional_info
-from common.db.model import get_invention_count, get_utility_model_count, get_marked_invention_count, get_industrial_design_count, get_marked_utility_model_count, get_marked_industrial_design_count, get_organisatons_with_patents_count
+from common.db.model import get_invention_count, get_utility_model_count, get_marked_invention_count, get_industrial_design_count, get_marked_utility_model_count, get_marked_industrial_design_count, get_organisatons_with_patents_count, get_msp_count_by_inns, get_org_count_by_inns, get_msp_classification_category_by_inns, get_msp_classification_type_by_inns, get_org_classification_by_inns
 from common.db.model import get_marked_invention_count_by_inns, get_marked_utility_model_count_by_inns, get_marked_industrial_design_count_by_inns, get_organisatons_with_patents_count_by_inns, get_okopf_count_by_inns
 from common.api.dependencies import get_client_session, get_db_connection
 from common.domain.schema import MarkupRequest, TestRequest
@@ -129,12 +129,28 @@ async def doc_dashboard(
     marked_uti_count_by_inns = await get_marked_utility_model_count_by_inns(db, inns)
     org_with_pat = await get_organisatons_with_patents_count_by_inns(db, inns)
     okopf = await get_okopf_count_by_inns(db, inns)
+    msp_count = await get_msp_count_by_inns(db, inns)
+    org_count = await get_org_count_by_inns(db, inns)
+    msp_cat_class_count = await get_msp_classification_category_by_inns(db, inns)
+    msp_type_class_count = await get_msp_classification_type_by_inns(db, inns)
+    org_class_count = await get_org_classification_by_inns(db, inns)
     return {
             "Количество размеченных изобретений": marked_inv_count_by_inns,
             "Количество размеченных промышленных образцов": marked_ind_count_by_inns,
             "Количество размеченных полезных моделей": marked_uti_count_by_inns,
             "Количество размеченных организаций": org_with_pat,
-            "Разметка по ОКОПФ": okopf}
+            "Разметка по ОКОПФ": okopf,
+            "МСП":{
+                "Общее количество": msp_count,
+                "По категории субъекта": msp_cat_class_count,
+                "По виду предпринимательства": msp_type_class_count
+            },
+            "Организации":
+            {
+                "Общее количество": org_count,
+                "По типу объекта": org_class_count
+            }
+            }
 
 @lcthack_router.get(
     "/db_dashboard",
