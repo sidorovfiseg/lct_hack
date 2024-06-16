@@ -384,52 +384,23 @@ async def get_utility_model_count(connection: Connection):
     return answer
 
 
-async def get_marked_invention_count(connection: Connection):
-    answer = await connection.fetchval(
-        '''
-        select count(distinct "registration number") from id_to_regnum_invent;
-        '''
-    )
+async def get_marked_patent_count(connection: Connection, patent_type: str):
+    query = '''
+    SELECT count
+    FROM mv_patent_counts
+    WHERE patent_type = $1;
+    '''
+    answer = await connection.fetchval(query, patent_type)
     return answer
 
 
-async def get_marked_industrial_design_count(connection: Connection):
-    answer = await connection.fetchval(
-        '''
-        select count(distinct "registration number") from id_to_regnum_inddes;
-        '''
-    )
-    return answer
-
-
-async def get_marked_utility_model_count(connection: Connection):
-    answer = await connection.fetchval(
-        '''
-        select count(distinct "registration number") from id_to_regnum_utimod;
-        '''
-    )
-    return answer
-
-
-async def get_organisatons_with_patents_count(connection: Connection):
-    answer = await connection.fetchval(
-        '''
-        select count(distinct p."ID компании") from 
-        (select "ID компании" from id_to_regnum_invent
-        union
-         select "ID компании" from id_to_regnum_inddes
-        union
-         select "ID компании" from id_to_regnum_inddes
-        ) as p;
-        '''
-    )
-    return answer
 
 
 async def get_okopf_count(connection: Connection):
     answer = await connection.fetch(
         '''
-            select "ОКОПФ (код)", "ОКОПФ (расшифровка)", count(*) from dataset_organisation group by "ОКОПФ (код)", "ОКОПФ (расшифровка)";
+            SELECT "ОКОПФ (код)", "ОКОПФ (расшифровка)", count
+            FROM mv_okopf_count;
         '''
     )
     return [dict(row) for row in answer] if answer else None
@@ -438,8 +409,8 @@ async def get_okopf_count(connection: Connection):
 async def get_marked_invention_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
-        select count(distinct "registration number") from id_to_regnum_invent
-        where "ID компании" in (select "ID компании" from dataset_organisation 
+        select count("registration_number") from companies_patents
+        where "company_id" in (select "ID компании" from dataset_organisation 
         where "ИНН" = ANY($1));
         ''', inns
     )
@@ -449,8 +420,8 @@ async def get_marked_invention_count_by_inns(connection: Connection, inns: list[
 async def get_marked_industrial_design_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
-        select count(distinct "registration number") from id_to_regnum_inddes
-        where "ID компании" in (select "ID компании" from dataset_organisation 
+        select count("registration_number") from companies_patents
+        where "company_id" in (select "ID компании" from dataset_organisation 
         where "ИНН" = ANY($1));
         ''', inns
     )
@@ -460,43 +431,57 @@ async def get_marked_industrial_design_count_by_inns(connection: Connection, inn
 async def get_marked_utility_model_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
-        select count(distinct "registration number") from id_to_regnum_utimod
-        where "ID компании" in (select "ID компании" from dataset_organisation 
+        select count("registration_number") from companies_patents
+        where "company_id" in (select "ID компании" from dataset_organisation 
         where "ИНН" = ANY($1));
         ''', inns
     )
     return answer
 
 
-async def get_organisatons_with_patents_count_by_inns(connection: Connection, inns: list[str]):
-    answer = await connection.fetchval(
-        '''
-        select count(distinct p."ID компании") from 
-        (select "ID компании" from id_to_regnum_invent
-        where "ID компании" in (select "ID компании" from dataset_organisation 
-        where "ИНН" = ANY($1))
-        union
-         select "ID компании" from id_to_regnum_inddes
-        where "ID компании" in (select "ID компании" from dataset_organisation 
-        where "ИНН" = ANY($1))
-        union
-         select "ID компании" from id_to_regnum_inddes
-        where "ID компании" in (select "ID компании" from dataset_organisation 
-        where "ИНН" = ANY($1))
-        ) as p;
-        ''', inns
+async def get_patent_counts_by_inns(connection: Connection, inns: list[str]):
+    query = '''
+    WITH company_ids AS (
+        SELECT "ID компании"
+        FROM public.dataset_organisation
+        WHERE "ИНН" = ANY($1)
     )
+    SELECT 
+        COUNT(CASE WHEN cp.patent_type = 'Изобретение' THEN 1 END) AS invention_count,
+        COUNT(CASE WHEN cp.patent_type = 'Промышленный образец' THEN 1 END) AS industrial_design_count,
+        COUNT(CASE WHEN cp.patent_type = 'Полезная модель' THEN 1 END) AS utility_model_count
+    FROM public.companies_patents cp
+    WHERE cp.company_id IN (SELECT "ID компании" FROM company_ids);
+    '''
+
+    row = await connection.fetchrow(query, inns)
+    return row['invention_count'], row['industrial_design_count'], row['utility_model_count']
+
+
+async def get_organisatons_with_patents_count_by_inns(connection: Connection, inns: list[str]):
+    query = '''
+    WITH company_ids AS (
+        SELECT "ID компании"
+        FROM dataset_organisation
+        WHERE "ИНН" = ANY($1)
+    )
+    SELECT COUNT(DISTINCT cp.company_id)
+    FROM public.companies_patents cp
+    JOIN company_ids ci ON cp.company_id = ci."ID компании";
+    '''
+    answer = await connection.fetchval(query, inns)
     return answer
 
 
 async def get_okopf_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
-            select "ОКОПФ (код)", "ОКОПФ (расшифровка)", count(*) from dataset_organisation 
-            where "ID компании" in 
-            (select "ID компании" from dataset_organisation 
-            where "ИНН" = ANY($1)) 
-            group by "ОКОПФ (код)", "ОКОПФ (расшифровка)"
+            SELECT "ОКОПФ (код)", "ОКОПФ (расшифровка)", COUNT(*)
+            FROM dataset_organisation 
+            WHERE "ID компании" IN 
+            (SELECT "ID компании" FROM dataset_organisation 
+            WHERE "ИНН" = ANY($1)) 
+            GROUP BY "ОКОПФ (код)", "ОКОПФ (расшифровка)"
             ;
         ''', inns
     )
