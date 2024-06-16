@@ -98,9 +98,12 @@ if st.button('Загрузить документ', disabled=uploaded_file is No
             # Форматирование колонок
             if 'ИНН' in data.columns:
                 data['ИНН'] = data['ИНН'].apply(lambda x: f'{int(x):d}')
+                
+            if 'ID компании' in data.columns:
+                data['ID компании'] = data['ID компании'].apply(lambda x: f'{int(x):d}' if pd.notnull(x) else '')
 
-            if 'registration number' in data.columns:
-                data['registration number'] = data['registration number'].apply(lambda x: f'{int(x):d}' if pd.notnull(x) else '')
+            if 'registration_number' in data.columns:
+                data['registration_number'] = data['registration_number'].apply(lambda x: f'{int(x):d}' if pd.notnull(x) else '')
 
             # Отображение данных в виде таблицы без индекса
             st.header("Результат:", anchor=False)
