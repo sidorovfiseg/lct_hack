@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 import aiofiles
 
-from common.db.model import get_inventions_by_inn, get_inventions_by_many_inns, get_industrial_designs_by_many_inns, get_utility_model_by_many_inns
+from common.db.model import get_inventions_by_inn, get_inventions_by_many_inns, get_industrial_designs_by_many_inns, get_utility_model_by_many_inns, get_okopf_count, get_msp_organisation_additional_info, get_organisation_additional_info
+from common.db.model import get_invention_count, get_utility_model_count, get_marked_invention_count, get_industrial_design_count, get_marked_utility_model_count, get_marked_industrial_design_count, get_organisatons_with_patents_count
+from common.db.model import get_marked_invention_count_by_inns, get_marked_utility_model_count_by_inns, get_marked_industrial_design_count_by_inns, get_organisatons_with_patents_count_by_inns, get_okopf_count_by_inns
 from common.api.dependencies import get_client_session, get_db_connection
 from common.domain.schema import MarkupRequest, TestRequest
 from common.utils.debug import async_timer
@@ -54,35 +56,47 @@ async def markup(
         await out_f.write(content)
     rows = []
     marked = []
-    inns = []
+    inns = set()
     async with aiofiles.open('/opt/app-root/src/files/' + query.file.filename, 'r') as csv_file:
         async for row in aiocsv.AsyncDictReader(csv_file, delimiter=','):
-            logging.info(f"{row=}")
-            inns.append(row['ИНН'])
+            inns.add(row['ИНН'])
             rows.append(row)
-    logging.info(f"{inns=}")
     marked_inns_invent = await get_inventions_by_many_inns(db, inns)
     marked_inns_inddes = await get_industrial_designs_by_many_inns(db, inns)
     marked_inns_utimod = await get_utility_model_by_many_inns(db, inns)
-    logging.info(f"{marked_inns_invent=}")
+    msp_add_info = await get_msp_organisation_additional_info(db, inns)
+    add_info = await get_organisation_additional_info(db, inns)
     for row in rows:
         flag = False
         if row['ИНН']:
-            for marked_row in marked_inns_invent:
-                if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
-                    flag = True
-                    marked.append(dict(row, **marked_row))
-            for marked_row in marked_inns_inddes:
-                if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
-                    flag = True
-                    marked.append(dict(row, **marked_row))
-            for marked_row in marked_inns_utimod:
-                if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
-                    flag = True
-                    marked.append(dict(row, **marked_row))
+            if marked_inns_invent:
+                for marked_row in marked_inns_invent:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
+                        flag = True
+                        marked.append(dict(row, **marked_row))
+            if marked_inns_inddes:
+                for marked_row in marked_inns_inddes:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
+                        flag = True
+                        marked.append(dict(row, **marked_row))
+            if marked_inns_utimod:
+                for marked_row in marked_inns_utimod:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
+                        flag = True
+                        marked.append(dict(row, **marked_row))
+            if msp_add_info:
+                for marked_row in msp_add_info:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
+                        flag = True
+                        marked.append(dict(row, **marked_row))
+            if add_info:
+                for marked_row in add_info:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
+                        flag = True
+                        marked.append(dict(row, **marked_row))
         if not flag:
             marked.append(row)
-    additional_keys = ["Наименование полное", "ИНН", "registration number", "invention name","utility model name", "mpk", "industrial design name", "publication URL", "mkpo"]
+    additional_keys = ["Наименование полное", "ИНН","objecttype","Вид предпринимательства", "registration number", "invention name","utility model name", "mpk", "industrial design name", "publication URL", "mkpo","Реестр МСП",  "Категория субъекта" ]
     all_keys = list(rows[0].keys()) + additional_keys
     uniq_keys = set(all_keys)
     keys = sorted(uniq_keys, key=all_keys.index)
@@ -103,11 +117,24 @@ async def doc_dashboard(
     session: ClientSession = Depends(get_client_session),
     db: Connection = Depends(get_db_connection),
 ) :
-    async with aiofiles.open('/opt/app-root/src/lct_app/sometestdata/' + query.file.filename, 'wb') as out_f:
+    async with aiofiles.open('/opt/app-root/src/files/' + query.file.filename, 'wb') as out_f:
         content = await query.file.read()
         await out_f.write(content)
-
-    return {"some dashboard" : {"data 1": 1, "data 2": 2}}
+    inns = set()
+    async with aiofiles.open('/opt/app-root/src/files/' + query.file.filename, 'r') as csv_file:
+        async for row in aiocsv.AsyncDictReader(csv_file, delimiter=','):
+            inns.add(row['ИНН'])
+    marked_inv_count_by_inns = await get_marked_invention_count_by_inns(db, inns)
+    marked_ind_count_by_inns = await get_marked_industrial_design_count_by_inns(db, inns)
+    marked_uti_count_by_inns = await get_marked_utility_model_count_by_inns(db, inns)
+    org_with_pat = await get_organisatons_with_patents_count_by_inns(db, inns)
+    okopf = await get_okopf_count_by_inns(db, inns)
+    return {
+            "Количество размеченных изобретений": marked_inv_count_by_inns,
+            "Количество размеченных промышленных образцов": marked_ind_count_by_inns,
+            "Количество размеченных полезных моделей": marked_uti_count_by_inns,
+            "Количество размеченных организаций": org_with_pat,
+            "Разметка по ОКОПФ": okopf}
 
 @lcthack_router.get(
     "/db_dashboard",
@@ -118,7 +145,20 @@ async def db_dashboard(
     session: ClientSession = Depends(get_client_session),
     db: Connection = Depends(get_db_connection),
 ) :
-    return {"some dashboard" : {"data 1": 1, "data 2": 2}}
 
-
-
+    inv_count = await get_invention_count(db)
+    ind_count = await get_industrial_design_count(db)
+    uti_count = await get_utility_model_count(db)
+    marked_inv_count = await get_marked_invention_count(db)
+    marked_ind_count = await get_marked_industrial_design_count(db)
+    marked_uti_count = await get_marked_utility_model_count(db)
+    org_with_pat = await get_organisatons_with_patents_count(db)
+    okopf = await get_okopf_count(db)
+    return {"Количество изобретений": inv_count, 
+            "Количество промышленных образцов": ind_count,
+            "Количество полезных моделей": uti_count, 
+            "Количество размеченных изобретений": marked_inv_count,
+            "Количество размеченных промышленных образцов": marked_ind_count,
+            "Количество размеченных полезных моделей": marked_uti_count,
+            "Количество размеченных организаций": org_with_pat,
+            "Разметка по ОКОПФ": okopf}

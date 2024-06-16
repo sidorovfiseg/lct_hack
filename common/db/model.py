@@ -247,6 +247,17 @@ async def create_table_msp_organisation_classifiaction(connection: Connection):
     '''
     )
 
+async def create_table_okopf_map(connection: Connection):
+    await connection.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS okopf_map
+            (
+                "ОКОПФ (код)" VARCHAR,
+                "ОКОПФ (расшифровка)" VARCHAR
+            );
+    '''
+    )
+
 async def create_tables(connection: Connection):
     await create_table_dataset_organisation(connection)
     await create_table_dataset_invention(connection)
@@ -257,6 +268,7 @@ async def create_tables(connection: Connection):
     await create_table_id_to_regnum_utimod(connection)
     await create_table_organisation_classifiaction(connection)
     await create_table_msp_organisation_classifiaction(connection)
+    await create_table_okopf_map(connection)
 
 async def get_inventions_by_inn(connection: Connection, inn):
     answer = await connection.fetch(
@@ -310,15 +322,171 @@ async def get_utility_model_by_many_inns(connection: Connection, inns: list[str]
     )
     return [dict(row) for row in answer] if answer else None
 
-async def get_organisation_additional_info(connection: Connection, inns: list[str]):
+async def get_msp_organisation_additional_info(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
-            select org."Наименование полное", org."ИНН", di."registration number", di."invention name" from dataset_organisation as org
-            join id_to_regnum_invent as itr
-            on org."ID компании" = itr."ID компании"
-            join dataset_invention as di
-            on itr."registration number" = di."registration number"
-            where org."ИНН" = ANY($1);
+            select "ИНН", "Реестр МСП", "Вид предпринимательства", "Категория субъекта" from msp_organisation_classification as class
+            where class."ИНН" = ANY($1);
         ''', inns
     )
     return [dict(row) for row in answer] if answer else None
+
+async def get_organisation_additional_info(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+            select "inn" as "ИНН", "objecttype" from organisation_classification as class
+            where class."inn" = ANY($1);
+        ''', inns
+    )
+    return [dict(row) for row in answer] if answer else None
+
+async def get_invention_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(*) from dataset_invention;
+        '''
+    )
+    return answer
+
+async def get_industrial_design_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(*) from dataset_industrial_design;
+        '''
+    )
+    return answer
+
+async def get_utility_model_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(*) from dataset_utility_model;
+        '''
+    )
+    return answer
+
+async def get_marked_invention_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_invent;
+        '''
+    )
+    return answer
+
+async def get_marked_industrial_design_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_inddes;
+        '''
+    )
+    return answer
+
+async def get_marked_utility_model_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_utimod;
+        '''
+    )
+    return answer
+
+async def get_organisatons_with_patents_count(connection: Connection):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct p."ID компании") from 
+        (select "ID компании" from id_to_regnum_invent
+        union
+         select "ID компании" from id_to_regnum_inddes
+        union
+         select "ID компании" from id_to_regnum_inddes
+        ) as p;
+        '''
+    )
+    return answer
+
+async def get_okopf_count(connection: Connection):
+    answer = await connection.fetch(
+        '''
+            select "ОКОПФ (код)", "ОКОПФ (расшифровка)", count(*) from dataset_organisation group by "ОКОПФ (код)", "ОКОПФ (расшифровка)";
+        '''
+    )
+    return [dict(row) for row in answer] if answer else None
+
+async def get_marked_invention_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_invent
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1));
+        ''', inns
+    )
+    return answer
+
+async def get_marked_industrial_design_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_inddes
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1));
+        ''', inns
+    )
+    return answer
+
+async def get_marked_utility_model_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct "registration number") from id_to_regnum_utimod
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1));
+        ''', inns
+    )
+    return answer
+
+async def get_organisatons_with_patents_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(distinct p."ID компании") from 
+        (select "ID компании" from id_to_regnum_invent
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1))
+        union
+         select "ID компании" from id_to_regnum_inddes
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1))
+        union
+         select "ID компании" from id_to_regnum_inddes
+        where "ID компании" in (select "ID компании" from dataset_organisation 
+        where "ИНН" = ANY($1))
+        ) as p;
+        ''', inns
+    )
+    return answer
+
+async def get_okopf_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+            select "ОКОПФ (код)", "ОКОПФ (расшифровка)", count(*) from dataset_organisation 
+            where "ID компании" in 
+            (select "ID компании" from dataset_organisation 
+            where "ИНН" = ANY($1)) 
+            group by "ОКОПФ (код)", "ОКОПФ (расшифровка)"
+            ;
+        ''', inns
+    )
+    return [dict(row) for row in answer] if answer else None
+
+async def get_msp_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(*) from msp_organisation_classification
+        where "ИНН" = ANY($1);
+        ''', inns
+    )
+    return answer
+
+async def get_org_count_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetchval(
+        '''
+        select count(*) from organisation_classification
+        where "ИНН" = ANY($1);
+        ''', inns
+    )
+    return answer
