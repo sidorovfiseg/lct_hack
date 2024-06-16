@@ -118,7 +118,7 @@ if st.button('Загрузить документ', disabled=uploaded_file is No
                 okopf_data = pd.DataFrame(dashboard_data['Разметка по ОКОПФ'])
                 okopf_data["ОКОПФ (расшифровка)"] = okopf_data["ОКОПФ (расшифровка)"].fillna("")
                 okopf_data["labels"] = okopf_data.apply(lambda row: f"{row['ОКОПФ (код)']} - {row['ОКОПФ (расшифровка)']}" if row['ОКОПФ (расшифровка)'] else row['ОКОПФ (код)'], axis=1)
-
+                okopf_data = okopf_data.sort_values(by="count", ascending=False)
                 # Построение бар графика
                 fig = px.bar(okopf_data, x='labels', y='count', title='Количество по ОКОПФ', text='count')
                 fig.update_layout(
@@ -179,7 +179,9 @@ if st.button('Получить данные с базы'):
 
             # Построение столбчатой диаграммы
             df_okopf = pd.DataFrame(data["Разметка по ОКОПФ"])
-            fig2 = px.bar(df_okopf, x="ОКОПФ (код)", y="count", title='Разметка по ОКОПФ', labels={'count':'Count', 'ОКОПФ (код)':'ОКОПФ'})
+            df_okopf_sorted = df_okopf.sort_values(by="count", ascending=False)
+            
+            fig2 = px.bar(df_okopf_sorted, x="ОКОПФ (код)", y="count", title='Разметка по ОКОПФ', labels={'count':'Count', 'ОКОПФ (код)':'ОКОПФ'})
 
             st.plotly_chart(fig1)
             st.plotly_chart(fig2)
