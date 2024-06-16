@@ -7,3 +7,11 @@ asyncpg
 openpyxl
 aiofiles
 pandas
+langchain-community
+langchain-text-splitters
+tiktoken
+clean-text
+unidecode
+gigachat
+scikit-learn
+plotly

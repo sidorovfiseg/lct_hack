@@ -540,7 +540,6 @@ async def get_org_classification_by_inns(connection: Connection, inns: list[str]
 
 async def get_company_patents_by_inns(connection: Connection, inn_list):
     inn_tuple = tuple(inn_list)
-    print(str(inn_list))
 
     query = """
     WITH company_ids AS (

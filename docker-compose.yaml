@@ -22,6 +22,7 @@ services:
       - lcthack-postgres
     env_file:
       - ./config/postgres.env
+      - ./config/giga_chat_api.env
     ports:
       - "8081:8081"
     volumes:
