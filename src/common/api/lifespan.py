@@ -11,8 +11,8 @@ async def lifespan(app: FastAPI):
     await DatabaseProvider.setup()
 
     pool = await DatabaseProvider.get_pool()
-    async with pool.acquire() as connection:
-        await create_tables(connection)
+    # async with pool.acquire() as connection:
+    #     await create_tables(connection)
 
     yield
 

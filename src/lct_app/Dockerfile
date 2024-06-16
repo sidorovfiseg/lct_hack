@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /opt/app-root/src/
 
-COPY /lct_app/requirements.txt /opt/app-root/src/lct_app/
+COPY /src/lct_app/requirements.txt /opt/app-root/src/lct_app/
 
 RUN pip install --no-cache-dir -r /opt/app-root/src/lct_app/requirements.txt
 RUN mkdir files

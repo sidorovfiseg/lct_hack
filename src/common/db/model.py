@@ -1,5 +1,3 @@
-from typing import List, Optional, Tuple
-
 from asyncpg import Connection
 
 
@@ -34,6 +32,7 @@ async def create_table_dataset_organisation(connection: Connection):
             );
     '''
     )
+
 
 async def create_table_dataset_invention(connection: Connection):
     await connection.execute(
@@ -90,6 +89,7 @@ async def create_table_dataset_invention(connection: Connection):
     '''
     )
 
+
 async def create_table_dataset_industrial_design(connection: Connection):
     await connection.execute(
         '''
@@ -134,6 +134,7 @@ async def create_table_dataset_industrial_design(connection: Connection):
         );
     '''
     )
+
 
 async def create_table_dataset_utility_model(connection: Connection):
     await connection.execute(
@@ -183,6 +184,7 @@ async def create_table_dataset_utility_model(connection: Connection):
     '''
     )
 
+
 async def create_table_id_to_regnum_invent(connection: Connection):
     await connection.execute(
         '''
@@ -193,6 +195,7 @@ async def create_table_id_to_regnum_invent(connection: Connection):
             );
     '''
     )
+
 
 async def create_table_id_to_regnum_inddes(connection: Connection):
     await connection.execute(
@@ -205,6 +208,7 @@ async def create_table_id_to_regnum_inddes(connection: Connection):
     '''
     )
 
+
 async def create_table_id_to_regnum_utimod(connection: Connection):
     await connection.execute(
         '''
@@ -215,6 +219,7 @@ async def create_table_id_to_regnum_utimod(connection: Connection):
             );
     '''
     )
+
 
 async def create_table_organisation_classifiaction(connection: Connection):
     await connection.execute(
@@ -228,6 +233,7 @@ async def create_table_organisation_classifiaction(connection: Connection):
             );
     '''
     )
+
 
 async def create_table_msp_organisation_classifiaction(connection: Connection):
     await connection.execute(
@@ -245,7 +251,10 @@ async def create_table_msp_organisation_classifiaction(connection: Connection):
                 "Категория субъекта" TEXT
             );
     '''
+        # csv header
+        # "Наименование"; "ИНН"; "ОГРНИП"; "Дата регистрации"; "ОКВЭД номер"; "ОКВЭД наименование"; "Реестр МСП"; "Вид предпринимательства"; "Категория субъекта"
     )
+
 
 async def create_table_okopf_map(connection: Connection):
     await connection.execute(
@@ -258,6 +267,7 @@ async def create_table_okopf_map(connection: Connection):
     '''
     )
 
+
 async def create_tables(connection: Connection):
     await create_table_dataset_organisation(connection)
     await create_table_dataset_invention(connection)
@@ -269,6 +279,7 @@ async def create_tables(connection: Connection):
     await create_table_organisation_classifiaction(connection)
     await create_table_msp_organisation_classifiaction(connection)
     await create_table_okopf_map(connection)
+
 
 async def get_inventions_by_inn(connection: Connection, inn):
     answer = await connection.fetch(
@@ -283,6 +294,7 @@ async def get_inventions_by_inn(connection: Connection, inn):
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_inventions_by_many_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -295,6 +307,7 @@ async def get_inventions_by_many_inns(connection: Connection, inns: list[str]):
         ''', inns
     )
     return [dict(row) for row in answer] if answer else None
+
 
 async def get_industrial_designs_by_many_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
@@ -309,6 +322,7 @@ async def get_industrial_designs_by_many_inns(connection: Connection, inns: list
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_utility_model_by_many_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -322,6 +336,7 @@ async def get_utility_model_by_many_inns(connection: Connection, inns: list[str]
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_msp_organisation_additional_info(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -330,6 +345,7 @@ async def get_msp_organisation_additional_info(connection: Connection, inns: lis
         ''', inns
     )
     return [dict(row) for row in answer] if answer else None
+
 
 async def get_organisation_additional_info(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
@@ -340,6 +356,7 @@ async def get_organisation_additional_info(connection: Connection, inns: list[st
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_invention_count(connection: Connection):
     answer = await connection.fetchval(
         '''
@@ -347,6 +364,7 @@ async def get_invention_count(connection: Connection):
         '''
     )
     return answer
+
 
 async def get_industrial_design_count(connection: Connection):
     answer = await connection.fetchval(
@@ -356,6 +374,7 @@ async def get_industrial_design_count(connection: Connection):
     )
     return answer
 
+
 async def get_utility_model_count(connection: Connection):
     answer = await connection.fetchval(
         '''
@@ -363,6 +382,7 @@ async def get_utility_model_count(connection: Connection):
         '''
     )
     return answer
+
 
 async def get_marked_invention_count(connection: Connection):
     answer = await connection.fetchval(
@@ -372,6 +392,7 @@ async def get_marked_invention_count(connection: Connection):
     )
     return answer
 
+
 async def get_marked_industrial_design_count(connection: Connection):
     answer = await connection.fetchval(
         '''
@@ -380,6 +401,7 @@ async def get_marked_industrial_design_count(connection: Connection):
     )
     return answer
 
+
 async def get_marked_utility_model_count(connection: Connection):
     answer = await connection.fetchval(
         '''
@@ -387,6 +409,7 @@ async def get_marked_utility_model_count(connection: Connection):
         '''
     )
     return answer
+
 
 async def get_organisatons_with_patents_count(connection: Connection):
     answer = await connection.fetchval(
@@ -402,6 +425,7 @@ async def get_organisatons_with_patents_count(connection: Connection):
     )
     return answer
 
+
 async def get_okopf_count(connection: Connection):
     answer = await connection.fetch(
         '''
@@ -409,6 +433,7 @@ async def get_okopf_count(connection: Connection):
         '''
     )
     return [dict(row) for row in answer] if answer else None
+
 
 async def get_marked_invention_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
@@ -420,6 +445,7 @@ async def get_marked_invention_count_by_inns(connection: Connection, inns: list[
     )
     return answer
 
+
 async def get_marked_industrial_design_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
@@ -430,6 +456,7 @@ async def get_marked_industrial_design_count_by_inns(connection: Connection, inn
     )
     return answer
 
+
 async def get_marked_utility_model_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
@@ -439,6 +466,7 @@ async def get_marked_utility_model_count_by_inns(connection: Connection, inns: l
         ''', inns
     )
     return answer
+
 
 async def get_organisatons_with_patents_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
@@ -460,6 +488,7 @@ async def get_organisatons_with_patents_count_by_inns(connection: Connection, in
     )
     return answer
 
+
 async def get_okopf_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -473,6 +502,7 @@ async def get_okopf_count_by_inns(connection: Connection, inns: list[str]):
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_msp_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
         '''
@@ -481,6 +511,7 @@ async def get_msp_count_by_inns(connection: Connection, inns: list[str]):
         ''', inns
     )
     return answer
+
 
 async def get_msp_classification_type_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
@@ -491,6 +522,7 @@ async def get_msp_classification_type_by_inns(connection: Connection, inns: list
     )
     return [dict(row) for row in answer] if answer else None
 
+
 async def get_msp_classification_category_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -499,6 +531,7 @@ async def get_msp_classification_category_by_inns(connection: Connection, inns: 
         ''', inns
     )
     return [dict(row) for row in answer] if answer else None
+
 
 async def get_org_count_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetchval(
@@ -509,6 +542,7 @@ async def get_org_count_by_inns(connection: Connection, inns: list[str]):
     )
     return answer
 
+
 async def get_org_classification_by_inns(connection: Connection, inns: list[str]):
     answer = await connection.fetch(
         '''
@@ -518,3 +552,71 @@ async def get_org_classification_by_inns(connection: Connection, inns: list[str]
     )
     return [dict(row) for row in answer] if answer else None
 
+
+async def get_company_patents_by_inns(connection: Connection, inn_list):
+    inn_tuple = tuple(inn_list)
+    print(str(inn_list))
+
+    query = """
+    WITH company_ids AS (
+        SELECT 
+            org."ID компании", 
+            org."Наименование полное", 
+            org."Наименование краткое", 
+            org."ИНН",
+            msp."Реестр МСП",
+            msp."Вид предпринимательства",
+            msp."Категория субъекта",
+            oc."objecttype"
+        FROM public.dataset_organisation org
+        LEFT JOIN public.msp_organisation_classification msp ON org."ИНН" = msp."ИНН"
+        LEFT JOIN public.organisation_classification oc ON org."ИНН" = oc."inn"
+        WHERE org."ИНН" = ANY($1)
+    )
+    SELECT 
+        ci."ID компании",
+        ci."Наименование полное",
+        ci."Наименование краткое",
+        ci."ИНН",
+        ci."Реестр МСП",
+        ci."Вид предпринимательства",
+        ci."Категория субъекта",
+        ci."objecttype",
+        cp.registration_number,
+        cp.patent_type,
+        COALESCE(di_invention."invention name", di_industrial_design."industrial design name", di_utility_model."utility model name") as patent_name,
+        COALESCE(di_invention."mpk", di_industrial_design."mkpo", di_utility_model."mpk") as classification,
+        di_industrial_design."publication URL" as industrial_design_url,
+        di_utility_model."publication URL" as utility_model_url
+    FROM company_ids ci
+    JOIN public.companies_patents cp ON ci."ID компании" = cp.company_id
+    LEFT JOIN public.dataset_invention di_invention ON cp.registration_number = di_invention."registration number" AND cp.patent_type = 'Изобретение'
+    LEFT JOIN public.dataset_industrial_design di_industrial_design ON cp.registration_number = di_industrial_design."registration number" AND cp.patent_type = 'Промышленный образец'
+    LEFT JOIN public.dataset_utility_model di_utility_model ON cp.registration_number = di_utility_model."registration number" AND cp.patent_type = 'Полезная модель';
+    """
+
+    records = await connection.fetch(query, inn_tuple)
+
+    results = []
+    for record in records:
+        result = {
+            "ID компании": record["ID компании"],
+            "Наименование полное": record["Наименование полное"],
+            "Наименование краткое": record["Наименование краткое"],
+            "ИНН": record["ИНН"],
+            "Реестр МСП": record["Реестр МСП"],
+            "Вид предпринимательства": record["Вид предпринимательства"],
+            "Категория субъекта": record["Категория субъекта"],
+            "objecttype": record["objecttype"],
+            "registration_number": record["registration_number"],
+            "patent_type": record["patent_type"],
+            "patent_name": record["patent_name"],
+            "classification": record["classification"]
+        }
+        if record["patent_type"] == 'Промышленный образец':
+            result["publication URL"] = record["industrial_design_url"]
+        elif record["patent_type"] == 'Полезная модель':
+            result["publication URL"] = record["utility_model_url"]
+        results.append(result)
+
+    return results

@@ -6,4 +6,4 @@ aiohttp
 asyncpg
 openpyxl
 aiofiles
-aiocsv
+pandas
