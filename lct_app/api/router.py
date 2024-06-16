@@ -61,11 +61,14 @@ async def markup(
         async for row in aiocsv.AsyncDictReader(csv_file, delimiter=','):
             inns.add(row['ИНН'])
             rows.append(row)
+
+    logging.info("start")
     marked_inns_invent = await get_inventions_by_many_inns(db, inns)
     marked_inns_inddes = await get_industrial_designs_by_many_inns(db, inns)
     marked_inns_utimod = await get_utility_model_by_many_inns(db, inns)
     msp_add_info = await get_msp_organisation_additional_info(db, inns)
     add_info = await get_organisation_additional_info(db, inns)
+    logging.info("rows")
     for row in rows:
         flag = False
         if row['ИНН']:
@@ -84,18 +87,25 @@ async def markup(
                     if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
                         flag = True
                         marked.append(dict(row, **marked_row))
-            if msp_add_info:
-                for marked_row in msp_add_info:
-                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
-                        flag = True
-                        marked.append(dict(row, **marked_row))
-            if add_info:
-                for marked_row in add_info:
-                    if marked_row['ИНН'] and marked_row['ИНН'] == row['ИНН']:
-                        flag = True
-                        marked.append(dict(row, **marked_row))
         if not flag:
             marked.append(row)
+    logging.info("addd data")
+    for row in range(len(marked)):
+        if marked[row]['ИНН']:
+            if msp_add_info:
+                for marked_row in msp_add_info:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == marked[row]['ИНН']:
+                        flag = True
+                        logging.info(f"BEFORE {marked[row]=}")
+                        marked[row] = dict(marked[row], **marked_row)
+                        logging.info(f"AFTER {marked[row]=}")
+            if add_info:
+                for marked_row in add_info:
+                    if marked_row['ИНН'] and marked_row['ИНН'] == marked[row]['ИНН']:
+                        flag = True
+                        marked[row] = dict(marked[row], **marked_row)
+        
+    logging.info("csv print")
     additional_keys = ["Наименование полное", "ИНН","objecttype","Вид предпринимательства", "registration number", "invention name","utility model name", "mpk", "industrial design name", "publication URL", "mkpo","Реестр МСП",  "Категория субъекта" ]
     all_keys = list(rows[0].keys()) + additional_keys
     uniq_keys = set(all_keys)
