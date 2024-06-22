@@ -51,7 +51,16 @@ async def markup(
         db: Connection = Depends(get_db_connection),
 ):
     contents = await file.read()
-    df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+
+    file_extension = file.filename.split('.')[-1]
+
+    if file_extension == 'csv':
+        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+    elif file_extension in ['xls', 'xlsx']:
+        df = pd.read_excel(io.BytesIO(contents))
+    else:
+        return {"error": "Unsupported file type"}
+
     inns = df['ИНН'].tolist()
     inns = [int(inn) for inn in inns]
     results = await get_company_patents_by_inns(db, inns)
@@ -59,11 +68,16 @@ async def markup(
     results_df = pd.DataFrame(results)
     merged_df = pd.merge(df, results_df, on='ИНН', how='left')
 
-    output = io.StringIO()
-    merged_df.to_csv(output, index=False)
-    output.seek(0)
-
-    return StreamingResponse(output, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=result.csv"})
+    output = io.BytesIO()
+    if file_extension == 'csv':
+        merged_df.to_csv(output, index=False)
+        output.seek(0)
+        return StreamingResponse(output, headers={"Content-Disposition": "attachment; filename=result.csv"}) # , media_type="text/csv"
+    elif file_extension in ['xls', 'xlsx']:
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            merged_df.to_excel(writer, index=False, sheet_name='Sheet1')
+        output.seek(0)
+        return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": "attachment; filename=result.xlsx"})
 
 
 @lcthack_router.post(
@@ -77,7 +91,15 @@ async def doc_dashboard(
         db: Connection = Depends(get_db_connection),
 ):
     contents = await file.read()
-    df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+    file_extension = file.filename.split('.')[-1]
+
+    if file_extension == 'csv':
+        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
+    elif file_extension in ['xls', 'xlsx']:
+        df = pd.read_excel(io.BytesIO(contents))
+    else:
+        return {"error": "Unsupported file type"}
+
     inns = df['ИНН'].tolist()
 
     marked_inv_count_by_inns, marked_ind_count_by_inns, marked_uti_count_by_inns = await get_patent_counts_by_inns(db, inns)
@@ -89,6 +111,7 @@ async def doc_dashboard(
     msp_cat_class_count = await get_msp_classification_category_by_inns(db, inns)
     msp_type_class_count = await get_msp_classification_type_by_inns(db, inns)
     org_class_count = await get_org_classification_by_inns(db, inns)
+
     return {
         "Количество размеченных изобретений": marked_inv_count_by_inns,
         "Количество размеченных промышленных образцов": marked_ind_count_by_inns,
@@ -100,11 +123,10 @@ async def doc_dashboard(
             "По категории субъекта": msp_cat_class_count,
             "По виду предпринимательства": msp_type_class_count
         },
-        "Организации":
-            {
-                "Общее количество": org_count,
-                "По типу объекта": org_class_count
-            }
+        "Организации": {
+            "Общее количество": org_count,
+            "По типу объекта": org_class_count
+        }
     }
 
 
