@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: lcthack
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5400:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data:rw
 
@@ -24,7 +24,7 @@ services:
       - ./config/postgres.env
       - ./config/giga_chat_api.env
     ports:
-      - "8081:8081"
+      - "8001:8001"
     volumes:
       - ./src/lct_app/:/opt/app-root/src/lct_app:rw
       - ./src/common/:/opt/app-root/src/common:rw

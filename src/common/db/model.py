@@ -394,8 +394,6 @@ async def get_marked_patent_count(connection: Connection, patent_type: str):
     return answer
 
 
-
-
 async def get_okopf_count(connection: Connection):
     answer = await connection.fetch(
         '''
@@ -604,3 +602,22 @@ async def get_company_patents_by_inns(connection: Connection, inn_list):
         results.append(result)
 
     return results
+
+
+async def insert_patent_holder(connection: Connection, patent_holder: str, inn: int):
+    await connection.execute(
+        '''
+        INSERT INTO patent_holders (patent_holder, inn) VALUES ($1, $2)
+        ON CONFLICT (patent_holder, inn) DO NOTHING;
+        ''', patent_holder, inn
+    )
+
+async def get_full_names_by_inns(connection: Connection, inns: list[str]):
+    answer = await connection.fetch(
+        '''
+            SELECT "Наименование полное", "ИНН"
+            FROM dataset_organisation
+            WHERE "ИНН" = ANY($1);
+        ''', inns
+    )
+    return {int(row['ИНН']): row['Наименование полное'] for row in answer} if answer else None

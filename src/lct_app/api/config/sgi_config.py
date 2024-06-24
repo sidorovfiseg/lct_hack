@@ -7,7 +7,7 @@ class SGIConfig(BaseSettings):
 
     HTTP_PROTOCOL: str = Field(env="HTTP_PROTOCOL", default="http")
     HOST: str = Field(env="HOST", default="0.0.0.0")
-    PORT: int = Field(env="PORT", default=8081)
+    PORT: int = Field(env="PORT", default=8001)
 
     WORKERS_COUNT: int = Field(env="WORKERS_COUNT", default=1)
 
