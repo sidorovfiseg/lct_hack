@@ -2,10 +2,11 @@ import requests
 import streamlit as st
 
 @st.cache_data
-def get_doc_markup(file):
+def get_doc_markup(file, limit=100):
     if file is not None:
         files = {'file': ('uploaded_file.csv', file.getvalue().encode('utf-8'), 'text/csv')}
-        response = requests.post('https://climbing-fox-open.ngrok-free.app/lct_hack/doc_markup', files=files)
+        params = {'limit': limit}
+        response = requests.post('https://climbing-fox-open.ngrok-free.app/lct_hack/doc_markup_new', files=files, params=params)
         return response
     return None
 
